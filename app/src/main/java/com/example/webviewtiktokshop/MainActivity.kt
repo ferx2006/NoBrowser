@@ -166,7 +166,27 @@ class MainActivity : AppCompatActivity() {
         }
 
         // WebView clients
-        webView.webViewClient = CustomWebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val url = request.url.toString()
+                if (url.startsWith("http://") || url.startsWith("https://")) {
+                    view.loadUrl(url)
+                    return true
+                }
+                return false
+            }
+
+            override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                urlInput.setText(url)
+            }
+
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                injectAntiDetectionScript(view)
+            }
+        }
+        
         webView.webChromeClient = object : WebChromeClient() {
             override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
                 // Ignore console messages
@@ -306,9 +326,6 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun clearAllData() {
-        // Clear WebView data
-        webView.apply {
-        
         // Limpiar cookies (esto cerrará la sesión)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             CookieManager.getInstance().removeAllCookies(null)
@@ -324,33 +341,19 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Limpiar bases de datos del WebView
-        this.deleteDatabase("webview.db")
-        this.deleteDatabase("webviewCache.db")
+        deleteDatabase("webview.db")
+        deleteDatabase("webviewCache.db")
+        
+        // Limpiar caché
+        webView.clearCache(true)
+        webView.clearFormData()
+        webView.clearHistory()
         
         Toast.makeText(this, "Todos los datos han sido eliminados (incluyendo sesión)", Toast.LENGTH_LONG).show()
         webView.reload()
     }
 
-    inner class CustomWebViewClient : WebViewClient() {
-        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-            val url = request.url.toString()
-            if (url.startsWith("http://") || url.startsWith("https://")) {
-                view.loadUrl(url)
-                return true
-            }
-            return false
-        }
 
-        override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-            super.onPageStarted(view, url, favicon)
-            urlInput.setText(url)
-        }
-
-        override fun onPageFinished(view: WebView, url: String) {
-            super.onPageFinished(view, url)
-            injectAntiDetectionScript(view)
-        }
-    }
 
     @SuppressLint("JavascriptInterface")
     private fun injectAntiDetectionScript(webView: WebView) {
