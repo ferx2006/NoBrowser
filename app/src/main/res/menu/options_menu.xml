@@ -2,9 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/change_ua"
-        android:title="Toggle User Agent" />
+        android:id="@+id/action_clear_cache"
+        android:title="Limpiar caché (no cierra sesión)"
+        app:showAsAction="never" />
     <item
-        android:id="@+id/apply_ua"
-        android:title="Apply User Agent" />
+        android:id="@+id/action_clear_data"
+        android:title="Limpiar todo (cierra sesión)"
+        app:showAsAction="never" />
 </menu>

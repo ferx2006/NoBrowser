@@ -294,47 +294,41 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearCacheOnly() {
+        // Limpiar solo la caché
         webView.clearCache(true)
         webView.clearFormData()
-        webView.clearHistory()
-        CookieManager.getInstance().removeAllCookies(null)
-        CookieManager.getInstance().flush()
-        Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
+        
+        // No limpiar cookies ni historial
+        
+        Toast.makeText(this, "Caché limpiada", Toast.LENGTH_SHORT).show()
+        webView.reload()
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun clearAllData() {
         // Clear WebView data
         webView.apply {
-            clearCache(true)
-            clearFormData()
-            clearHistory()
-            clearSslPreferences()
-            CookieManager.getInstance().apply {
-                removeAllCookies(null)
-                flush()
-            }
-        }
         
-        // Clear WebView database and cache
+        // Limpiar cookies (esto cerrará la sesión)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            WebStorage.getInstance().deleteAllData()
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
+        } else {
+            val cookieSyncManager = CookieSyncManager.createInstance(this)
+            cookieSyncManager.startSync()
+            val cookieManager = CookieManager.getInstance()
+            cookieManager.removeAllCookie()
+            cookieManager.removeSessionCookie()
+            cookieSyncManager.stopSync()
+            cookieSyncManager.sync()
         }
         
-        // Clear application data
-        try {
-            cacheDir?.deleteRecursively()
-            applicationContext.cacheDir?.deleteRecursively()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                WebView(applicationContext).clearHistory()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // Limpiar bases de datos del WebView
+        this.deleteDatabase("webview.db")
+        this.deleteDatabase("webviewCache.db")
         
-        // Reload the page
+        Toast.makeText(this, "Todos los datos han sido eliminados (incluyendo sesión)", Toast.LENGTH_LONG).show()
         webView.reload()
-        Toast.makeText(this, "All data cleared", Toast.LENGTH_SHORT).show()
     }
 
     inner class CustomWebViewClient : WebViewClient() {
