@@ -14,7 +14,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var urlInput: EditText
     private lateinit var uaInput: EditText
-    private val defaultUrl = "https://seller.tiktok.com/"
+    private val defaultUrl = "https://seller-es-accounts.tiktok.com/account/register"
     private val defaultUA = "Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.7204.63 Mobile Safari/537.36"
     private lateinit var sharedPref: android.content.SharedPreferences
     private val PREF_UA = "user_agent_pref"
