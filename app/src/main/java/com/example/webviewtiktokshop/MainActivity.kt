@@ -326,31 +326,68 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun clearAllData() {
-        // Limpiar cookies (esto cerrará la sesión)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            CookieManager.getInstance().removeAllCookies(null)
-            CookieManager.getInstance().flush()
-        } else {
-            val cookieSyncManager = CookieSyncManager.createInstance(this)
-            cookieSyncManager.startSync()
+        try {
+            // 1. Limpiar cookies
             val cookieManager = CookieManager.getInstance()
-            cookieManager.removeAllCookie()
-            cookieManager.removeSessionCookie()
-            cookieSyncManager.stopSync()
-            cookieSyncManager.sync()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                cookieManager.removeAllCookies(null)
+                cookieManager.flush()
+            } else {
+                val cookieSyncManager = CookieSyncManager.createInstance(this)
+                cookieSyncManager.startSync()
+                cookieManager.removeAllCookie()
+                cookieManager.removeSessionCookie()
+                cookieSyncManager.stopSync()
+                cookieSyncManager.sync()
+            }
+            
+            // 2. Limpiar almacenamiento web
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                webView.evaluateJavascript("localStorage.clear();", null)
+                webView.evaluateJavascript("sessionStorage.clear();", null)
+                webView.evaluateJavascript("indexedDB.databases().then(dbs => { dbs.forEach(db => { indexedDB.deleteDatabase(db.name); }); });", null)
+            }
+            
+            // 3. Limpiar caché y datos del WebView
+            webView.clearCache(true)
+            webView.clearFormData()
+            webView.clearHistory()
+            webView.clearSslPreferences()
+            
+            // 4. Limpiar bases de datos SQLite
+            val dbFiles = databaseList()
+            for (db in dbFiles) {
+                if (db.endsWith(".db") || db.endsWith(".db-shm") || db.endsWith(".db-wal")) {
+                    deleteDatabase(db)
+                }
+            }
+            
+            // 5. Limpiar archivos en el directorio de caché
+            cacheDir.deleteRecursively()
+            applicationContext.cacheDir?.deleteRecursively()
+            
+            // 6. Limpiar WebStorage
+            WebStorage.getInstance().deleteAllData()
+            
+            // 7. Limpiar SharedPreferences
+            sharedPref.edit().clear().apply()
+            
+            // 8. Forzar sincronización
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                cookieManager.removeAllCookies(null)
+            }
+            
+            Toast.makeText(this, "✓ Todos los datos han sido eliminados (incluyendo sesión)", Toast.LENGTH_LONG).show()
+            
+            // Recargar después de un breve retraso para asegurar que todo se limpió
+            webView.postDelayed({
+                webView.reload()
+            }, 500)
+            
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error al limpiar datos", e)
+            Toast.makeText(this, "Error al limpiar datos: ${e.message}", Toast.LENGTH_LONG).show()
         }
-        
-        // Limpiar bases de datos del WebView
-        deleteDatabase("webview.db")
-        deleteDatabase("webviewCache.db")
-        
-        // Limpiar caché
-        webView.clearCache(true)
-        webView.clearFormData()
-        webView.clearHistory()
-        
-        Toast.makeText(this, "Todos los datos han sido eliminados (incluyendo sesión)", Toast.LENGTH_LONG).show()
-        webView.reload()
     }
 
 
